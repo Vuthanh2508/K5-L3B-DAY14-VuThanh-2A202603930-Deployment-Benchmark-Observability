@@ -6,12 +6,13 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import json
 import logging
+from pathlib import Path
 import signal
 import sys
 import time
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from app.auth import verify_api_key
@@ -57,6 +58,7 @@ def _configure_logging() -> logging.Logger:
 
 logger = _configure_logging()
 START_TIME = time.time()
+DEMO_HTML_PATH = Path(__file__).resolve().parent.parent / "static" / "index.html"
 _is_ready = False
 _in_flight = 0
 
@@ -148,6 +150,40 @@ class AskRequest(BaseModel):
     user_id: str | None = None
 
 
+def _demo_client_key(request: Request) -> str:
+    """Lấy key rate-limit theo IP cho endpoint public demo (không dùng AGENT_API_KEY)."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else ""
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    return f"demo:{client_ip or 'anonymous'}"
+
+
+def _run_agent(question: str, rate_limit_key: str) -> dict:
+    """Pipeline chung: Rate Limit (Redis) -> Cost Guard (Redis) -> LLM -> ghi cost."""
+    check_rate_limit(rate_limit_key)
+    check_budget()
+
+    answer = llm_ask(question)
+    input_tokens = max(1, len(question.split()) * 2)
+    output_tokens = max(1, len(answer.split()) * 2)
+    cost_usd = record_cost(input_tokens, output_tokens)
+
+    return {
+        "question": question,
+        "answer": answer,
+        "cost_usd": round(cost_usd, 6),
+    }
+
+
+@app.get("/", include_in_schema=False)
+def demo_page():
+    """Trang Web Demo gọn nhẹ để người dùng thử agent trực tiếp trên trình duyệt."""
+    if not DEMO_HTML_PATH.is_file():
+        raise HTTPException(status_code=404, detail="Demo UI not found")
+    return FileResponse(DEMO_HTML_PATH)
+
+
 @app.get("/health")
 def health():
     """Liveness probe — luôn trả 200 khi process còn sống, không phụ thuộc Redis."""
@@ -166,19 +202,14 @@ def ready():
     return {"ready": True, "redis": "ok"}
 
 
+@app.post("/demo/ask")
+def demo_ask(body: AskRequest, request: Request):
+    """Endpoint cho trang Web Demo công khai: rate limit theo IP + Cost Guard, không lộ AGENT_API_KEY."""
+    result = _run_agent(body.question, _demo_client_key(request))
+    return {**result, "mode": "public-demo"}
+
+
 @app.post("/ask")
 def ask(body: AskRequest, api_key: str = Depends(verify_api_key)):
     """Endpoint chính: API Key -> Rate Limit (Redis) -> Cost Guard (Redis) -> LLM."""
-    check_rate_limit(api_key)
-    check_budget()
-
-    answer = llm_ask(body.question)
-    input_tokens = max(1, len(body.question.split()) * 2)
-    output_tokens = max(1, len(answer.split()) * 2)
-    cost_usd = record_cost(input_tokens, output_tokens)
-
-    return {
-        "question": body.question,
-        "answer": answer,
-        "cost_usd": round(cost_usd, 6),
-    }
+    return _run_agent(body.question, api_key)

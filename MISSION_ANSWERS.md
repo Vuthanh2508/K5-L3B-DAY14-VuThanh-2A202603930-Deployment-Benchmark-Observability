@@ -326,7 +326,7 @@ Kết quả chạy `python check_production_ready.py` trong Ubuntu WSL2 (`os.nam
 ```
 
 - Kích thước Docker image đo thực tế: **63 MB** (`< 500 MB`), base `python:3.11-slim`, user non-root `appuser`.
-- `docker stop`: **exit code 0, 0.6s** (`< 10s`).
+- `docker stop`: **exit code 0, 0.9s** (`< 10s`).
 - Không sửa `check_production_ready.py` hay `utils/mock_llm.py`.
 
 ---
@@ -440,4 +440,5 @@ python check_production_ready.py
 ```
 - **CP6 (Part 3 — Cloud Deployment):** Dùng AI hướng dẫn cấu hình Render Web Service + Key Value, tạo `DEPLOYMENT.md`, đã tự deploy lên Render và kiểm tra các endpoint public `/health`, `/ready`, `/ask`
 - **CP7 (Part 7 Bước 1 — Benchmark local):** Dùng AI hỗ trợ bổ sung 2 mục còn thiếu (`security-02`, `scaling-03`) vào KNOWLEDGE_BASE trong `develop/utils/mock_llm.py` (và đồng bộ sang `production/utils/mock_llm.py` khi đã đạt full test). Đã tự chạy toàn bộ `load_test.py` và `eval/run_eval.py` trên máy (`eval_v2_fixed.json` đạt `23/23`, 0 regression)
-- **CP8 (Part 7 Bước 2 — Observability stack):** Dùng AI hỗ trợ giải thích phân tích log `trace_id` chậm nhất (`01e4fca4441ae5f6f2af5629b8b2e8a0`), kiểm tra số liệu CSV (`scale_1_stats.csv`, `scale_3_stats.csv`. Đã tự chạy Locust headless (1 vs 3 instances), kiểm tra Nginx chặn `/metrics` (404), mở Grafana, tìm trace chậm/lỗi trên Jaeger và thực hiện đủ 5 thí nghiệm phá hệ thống A–E với 4 alert cùng firing trên Prometheus
+- **CP8 (Part 7 Bước 2 — Observability stack):** Dùng AI hỗ trợ giải thích phân tích log `trace_id` chậm nhất (`01e4fca4441ae5f6f2af5629b8b2e8a0`), kiểm tra số liệu CSV (`scale_1_stats.csv`, `scale_3_stats.csv`). Đã tự chạy Locust headless (1 vs 3 instances), kiểm tra Nginx chặn `/metrics` (404), mở Grafana, tìm trace chậm/lỗi trên Jaeger và thực hiện đủ 5 thí nghiệm phá hệ thống A–E với 4 alert cùng firing trên Prometheus
+- **Bổ sung Web Demo (Part 6):** Dùng AI tạo trang giao diện demo tĩnh `06-lab-complete/static/index.html` phục vụ tại `GET /` và endpoint công khai `POST /demo/ask` (dùng chung `_run_agent`, rate limit theo IP + Cost Guard qua Redis, không lộ hay bypass `AGENT_API_KEY` của `POST /ask`), cập nhật `06-lab-complete/Dockerfile` và `DEPLOYMENT.md`. Đã chạy lại `python check_production_ready.py` và test trực tiếp các endpoint `/`, `/demo/ask`, `/ask`, `/health`, `/ready` trong Docker container

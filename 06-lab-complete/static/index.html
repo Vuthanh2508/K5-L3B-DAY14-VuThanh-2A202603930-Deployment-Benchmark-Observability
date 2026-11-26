@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production AI Agent — Live Demo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-2: #0b1220;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #0284c7;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --err: #ef4444;
+      --purple: #a855f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 14px;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .sub {
+      margin: 4px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.ok { background: var(--ok); }
+    .dot.err { background: var(--err); }
+    .btn-link, button {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    button:hover, .btn-link:hover { border-color: var(--accent); }
+    button.primary {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+      color: #fff;
+      font-weight: 600;
+    }
+    button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .tab.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .mode-note {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
+    .key-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .key-row.hidden { display: none; }
+    input, textarea {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .samples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .chip {
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+    .chat-log {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 240px;
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin: auto;
+      text-align: center;
+    }
+    .msg {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      max-width: 90%;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: rgba(2, 132, 199, 0.25);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--panel);
+      border: 1px solid var(--border);
+    }
+    .meta {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .badge {
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .b-200 { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+    .b-401 { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+    .b-402 { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+    .b-429, .b-err { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .composer {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .composer textarea {
+      resize: vertical;
+      min-height: 44px;
+      max-height: 120px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="header">
+        <div>
+          <h1>Production AI Agent — Demo</h1>
+          <p class="sub">Day 14 Deployment · FastAPI + Redis Rate Limit &amp; Cost Guard (Mock LLM)</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="refreshBtn" type="button">Refresh Status</button>
+          <a class="btn-link" href="/docs" target="_blank" rel="noopener">Swagger /docs</a>
+        </div>
+      </div>
+      <div class="status-row">
+        <span class="pill"><span id="healthDot" class="dot"></span><span id="healthText">/health: checking...</span></span>
+        <span class="pill"><span id="readyDot" class="dot"></span><span id="readyText">/ready: checking...</span></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs">
+        <button id="modeDemo" type="button" class="tab active">Public Demo (POST /demo/ask)</button>
+        <button id="modeKey" type="button" class="tab">Test API Key (POST /ask)</button>
+      </div>
+      <div id="modeNote" class="mode-note">
+        Ai cũng có thể nhập câu hỏi và thử trực tiếp tại đây (giới hạn tốc độ theo IP &amp; Cost Guard qua Redis, không lộ AGENT_API_KEY).
+      </div>
+      <div id="keyRow" class="key-row hidden">
+        <input id="apiKeyInput" type="password" placeholder="Nhập X-API-Key (để trống để test lỗi 401)" autocomplete="off" />
+      </div>
+
+      <div class="samples">
+        <button type="button" class="chip" data-q="What is Docker?">What is Docker?</button>
+        <button type="button" class="chip" data-q="How does deploy work?">How does deploy work?</button>
+        <button type="button" class="chip" data-q="Check health status">Check health status</button>
+        <button type="button" class="chip" data-q="Hello AI Agent!">Hello AI Agent!</button>
+      </div>
+
+      <div id="chatLog" class="chat-log">
+        <div id="emptyState" class="empty">Chọn câu hỏi mẫu hoặc nhập câu hỏi bên dưới để thử agent.</div>
+      </div>
+
+      <form id="askForm" class="composer">
+        <textarea id="questionInput" rows="1" placeholder="Nhập câu hỏi cho agent..." maxlength="2000" required></textarea>
+        <button id="sendBtn" class="primary" type="submit">Gửi</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const healthDot = document.getElementById("healthDot");
+    const healthText = document.getElementById("healthText");
+    const readyDot = document.getElementById("readyDot");
+    const readyText = document.getElementById("readyText");
+    const modeDemoBtn = document.getElementById("modeDemo");
+    const modeKeyBtn = document.getElementById("modeKey");
+    const modeNote = document.getElementById("modeNote");
+    const keyRow = document.getElementById("keyRow");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const chatLog = document.getElementById("chatLog");
+    const emptyState = document.getElementById("emptyState");
+    const questionInput = document.getElementById("questionInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const askForm = document.getElementById("askForm");
+
+    let mode = "demo";
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      const isDemo = mode === "demo";
+      modeDemoBtn.classList.toggle("active", isDemo);
+      modeKeyBtn.classList.toggle("active", !isDemo);
+      keyRow.classList.toggle("hidden", isDemo);
+      modeNote.textContent = isDemo
+        ? "Ai cũng có thể nhập câu hỏi và thử trực tiếp tại đây (giới hạn tốc độ theo IP & Cost Guard qua Redis, không lộ AGENT_API_KEY)."
+        : "Gọi thẳng endpoint bảo mật POST /ask với header X-API-Key (nếu thiếu hoặc sai key sẽ trả HTTP 401).";
+    }
+
+    modeDemoBtn.addEventListener("click", () => setMode("demo"));
+    modeKeyBtn.addEventListener("click", () => setMode("key"));
+
+    async function checkStatus() {
+      try {
+        const res = await fetch("/health");
+        const data = await res.json();
+        healthDot.className = "dot " + (res.ok ? "ok" : "err");
+        healthText.textContent = `/health: ${res.status} (${data.environment || "ok"}, up ${data.uptime_seconds ?? 0}s)`;
+      } catch {
+        healthDot.className = "dot err";
+        healthText.textContent = "/health: unreachable";
+      }
+
+      try {
+        const res = await fetch("/ready");
+        const data = await res.json();
+        readyDot.className = "dot " + (res.ok ? "ok" : "err");
+        readyText.textContent = res.ok
+          ? `/ready: ${res.status} (redis: ${data.redis || "ok"})`
+          : `/ready: ${res.status} (${data.detail || "not ready"})`;
+      } catch {
+        readyDot.className = "dot err";
+        readyText.textContent = "/ready: unreachable";
+      }
+    }
+
+    function appendMessage(role, text, metaItems = [], statusClass = "") {
+      if (emptyState && emptyState.parentNode) {
+        emptyState.remove();
+      }
+      const box = document.createElement("div");
+      box.className = "msg " + role;
+
+      const body = document.createElement("div");
+      body.textContent = text;
+      box.appendChild(body);
+
+      if (metaItems.length > 0) {
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        metaItems.forEach((item, idx) => {
+          const span = document.createElement("span");
+          if (idx === 0 && statusClass) {
+            span.className = "badge " + statusClass;
+          }
+          span.textContent = item;
+          meta.appendChild(span);
+        });
+        box.appendChild(meta);
+      }
+
+      chatLog.appendChild(box);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendQuestion(question) {
+      const trimmed = question.trim();
+      if (!trimmed) return;
+
+      appendMessage("user", trimmed);
+      questionInput.value = "";
+      sendBtn.disabled = true;
+
+      const endpoint = mode === "demo" ? "/demo/ask" : "/ask";
+      const headers = { "Content-Type": "application/json" };
+      if (mode === "key") {
+        const keyVal = apiKeyInput.value.trim();
+        if (keyVal) headers["X-API-Key"] = keyVal;
+      }
+
+      const started = performance.now();
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ question: trimmed, user_id: "web-demo" }),
+        });
+        const elapsed = Math.round(performance.now() - started);
+        const data = await res.json().catch(() => ({}));
+
+        const badgeClass =
+          res.status === 200 ? "b-200" :
+          res.status === 401 ? "b-401" :
+          res.status === 402 ? "b-402" : "b-err";
+
+        if (res.ok) {
+          const meta = [
+            `HTTP ${res.status}`,
+            `POST ${endpoint}`,
+            `${elapsed} ms`,
+            `cost: $${data.cost_usd ?? 0}`,
+          ];
+          appendMessage("bot", data.answer || "(empty response)", meta, badgeClass);
+        } else {
+          const retry = res.headers.get("Retry-After");
+          const meta = [
+            `HTTP ${res.status}`,
+            `POST ${endpoint}`,
+            `${elapsed} ms`,
+            ...(retry ? [`Retry-After: ${retry}s`] : []),
+          ];
+          appendMessage("bot", `Lỗi: ${data.detail || res.statusText}`, meta, badgeClass);
+        }
+      } catch (err) {
+        appendMessage("bot", `Không kết nối được server: ${err.message}`, ["Network Error"], "b-err");
+      } finally {
+        sendBtn.disabled = false;
+        questionInput.focus();
+      }
+    }
+
+    askForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      sendQuestion(questionInput.value);
+    });
+
+    questionInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendQuestion(questionInput.value);
+      }
+    });
+
+    document.querySelectorAll(".chip").forEach((btn) => {
+      btn.addEventListener("click", () => sendQuestion(btn.dataset.q || ""));
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", checkStatus);
+    checkStatus();
+  </script>
+</body>
+</html>

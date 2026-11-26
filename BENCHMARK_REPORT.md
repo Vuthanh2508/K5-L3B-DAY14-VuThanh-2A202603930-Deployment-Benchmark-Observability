@@ -73,11 +73,9 @@ Không tăng tuyến tính ở mức cao:
 
 **Nhận xét về trade-off chất lượng / chi phí / latency giữa v1 và v2:**
 
-- **Chất lượng:** v2 bổ sung bước retrieval (`KNOWLEDGE_BASE`) giúp accuracy tăng từ **4.3%** (1/23) lên **91.3%** (21/23), và **100%** (23/23, 0 regression) sau khi bổ sung 2 mục còn thiếu.
-- **Chi phí:** v2 tốn gấp ~1.92 lần token/câu (`108.8` so với `56.6` ở v1) vì prompt có thêm context, nên tổng cost cao gần gấp đôi (`$0.000758` vs `$0.000397`). Tuy nhiên **cost / câu đúng** của v2 lại **rẻ hơn ~11 lần** (`$0.00003607` — và `$0.00003397` sau khi sửa KB — so với `$0.00039735` ở v1) vì v1 gần như trả lời sai hết.
-- **Latency:** v2 chậm hơn một chút ở p50/p95 (`p50=184.6ms`, `p95=214.3ms` so với `p50=157.6ms`, `p95=183.5ms` của v1) do thêm bước retrieval ~20ms + prompt dài hơn. Lưu ý ở lần chạy `eval_v2_fixed.json`, `p95=1521.3ms` do có 2/23 câu dính `MOCK_SLOW_RATE=0.03` — minh họa rằng mẫu 23 câu eval quá nhỏ để đánh giá latency, phải đo latency bằng `load_test.py`.
-- **Quality gate trong CI:** `eval/run_eval.py` trả **exit code `1`** nếu `accuracy < --min-accuracy` hoặc có bất kỳ câu nào bị regression so với `--baseline` (khi test v1 với `--baseline reports/eval_v2.json`, có 20 câu regression nên Quality gate `FAIL` và trả `exit code 1`). Trong GitHub Actions (`.github/workflows/eval.yml` chạy trên `pull_request`), chỉ cần bật agent và chạy `python eval/run_eval.py --min-accuracy 0.85 --baseline reports/eval_v2.json` — exit code `1` sẽ tự động làm step/job fail và chặn merge PR.
-
+- **Chất lượng:** v2 bổ sung bước retrieval (`KNOWLEDGE_BASE`) giúp accuracy tăng từ **4.3%** (1/23) lên **91.3%** (21/23), và **100%** (23/23, 0 regression) sau khi bổ sung 2 mục còn thiếu
+- **Chi phí:** v2 tốn gấp ~1.92 lần token/câu (`108.8` so với `56.6` ở v1) vì prompt có thêm context, nên tổng cost cao gần gấp đôi (`$0.000758` vs `$0.000397`). Tuy nhiên **cost / câu đúng** của v2 lại **rẻ hơn ~11 lần** (`$0.00003607` — và `$0.00003397` sau khi sửa KB — so với `$0.00039735` ở v1) vì v1 gần như trả lời sai hết
+- **Latency:** v2 chậm hơn một chút ở p50/p95 (`p50=184.6ms`, `p95=214.3ms` so với `p50=157.6ms`, `p95=183.5ms` của v1) do thêm bước retrieval ~20ms + prompt dài hơn. Lưu ý ở lần chạy `eval_v2_fixed.json`, `p95=1521.3ms` do có 2/23 câu dính `MOCK_SLOW_RATE=0.03` — minh họa rằng mẫu 23 câu eval quá nhỏ để đánh giá latency, phải đo latency bằng `load_test.py`
 ---
 
 ## 4. Observability stack (production)

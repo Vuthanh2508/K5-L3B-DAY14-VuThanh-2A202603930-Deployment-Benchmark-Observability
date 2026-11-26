@@ -1,7 +1,10 @@
 # Deployment Information
 
 ## Public URL
-https://k5-l3b-day14-vuthanh-2a202603930.onrender.com
+- **Demo Web UI:** https://k5-l3b-day14-vuthanh-2a202603930.onrender.com/
+- **API Docs (Swagger):** https://k5-l3b-day14-vuthanh-2a202603930.onrender.com/docs
+
+> Trang chủ `/` là giao diện Web Demo gọi qua `POST /demo/ask` (giới hạn tốc độ theo IP + Cost Guard trên Redis, không lộ `AGENT_API_KEY`) để người dùng bên ngoài thử trực tiếp, hoặc chuyển sang tab `Test API Key` để gọi `POST /ask`.
 
 ## Platform
 Render (Web Service — Docker, Root Directory: `06-lab-complete`, kết nối Render Key Value Redis)

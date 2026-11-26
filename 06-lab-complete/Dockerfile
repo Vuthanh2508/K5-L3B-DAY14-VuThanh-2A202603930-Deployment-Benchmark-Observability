@@ -22,6 +22,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser utils ./utils
+COPY --chown=appuser:appuser static ./static
 
 USER appuser
 

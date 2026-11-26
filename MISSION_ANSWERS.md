@@ -155,7 +155,32 @@ $ curl -X POST http://localhost/ask -H "Content-Type: application/json" -d '{"qu
 
 ## Part 3: Cloud Deployment
 
-*(Chờ CP6)*
+### Exercise 3.2: Deploy Agent Part 6 lên Render
+
+- **Public URL:** `https://k5-l3b-day14-vuthanh-2a202603930.onrender.com`
+- **Cấu hình triển khai:** Render Web Service (`runtime: docker`, `rootDir: 06-lab-complete`, `region: singapore`, `plan: free`, `healthCheckPath: /health`) kết nối với Render Key Value (`redis`) qua biến môi trường `REDIS_URL` và `AGENT_API_KEY` đặt trực tiếp trên Render Dashboard.
+- **Kết quả tự kiểm trên public URL:**
+  - `GET /health` → `HTTP 200` (`{"status":"ok","environment":"production","uptime_seconds":34.4}`)
+  - `GET /ready` → `HTTP 200` (`{"ready":true,"redis":"ok"}`)
+  - `POST /ask` (không có `X-API-Key`) → `HTTP 401` (`{"detail":"Invalid or missing API key. Include header: X-API-Key: <your-key>"}`)
+  - `POST /ask` (kèm `X-API-Key: $AGENT_API_KEY`) → `HTTP 200` (đã kiểm chứng đủ bộ 4 lệnh CP6 ra `200 / 200 / 401 / 200`)
+- **Screenshots:** `screenshots/dashboard.png`, `screenshots/running.png`, `screenshots/test.png` (chi tiết trong [DEPLOYMENT.md](DEPLOYMENT.md)).
+
+### So sánh `railway.toml` vs `render.yaml`
+
+| Tiêu chí | `railway.toml` (`03-cloud-deployment/railway/`) | `render.yaml` (`06-lab-complete/` & `03-cloud-deployment/render/`) |
+| --- | --- | --- |
+| **Định dạng & phạm vi** | **TOML**, cấu hình build/deploy cho **1 service**; các dịch vụ phụ như Redis tạo riêng trên Dashboard/CLI | **YAML (Infrastructure as Code / Blueprint)**, khai báo được **nhiều service cùng lúc** (Web Service + Redis `keyvalue`) và nối `REDIS_URL` tự động qua `fromService` |
+| **Build & Start** | Dùng `[build] builder` (`NIXPACKS` hoặc `DOCKERFILE`), `[deploy] startCommand`, `healthcheckPath`, `healthcheckTimeout`, `restartPolicyType` | Khai báo `type: web`, `runtime` (`docker` hoặc `python`), `rootDir` (chọn thư mục con trong monorepo), `region`, `plan`, `healthCheckPath`, `autoDeploy` |
+| **Biến môi trường & Secret** | Không liệt kê biến trong `railway.toml`; đặt qua Dashboard hoặc `railway variables set` | Cho phép khai báo `envVars` ngay trong YAML; secret bắt buộc dùng `sync: false` (nhập trên Dashboard) hoặc `generateValue: true` (tự sinh), không ghi giá trị thật vào Git |
+
+### Exercise 3.3: Phân tích CI/CD Pipeline GCP Cloud Run (`03-cloud-deployment/production-cloud-run/`)
+
+Pipeline trong `cloudbuild.yaml` tự động chạy 4 bước tuần tự khi push lên `main`, kết hợp cấu hình dịch vụ trong `service.yaml`:
+1. **`test` (`python:3.11-slim`):** Cài `requirements.txt` + `pytest` và chạy `pytest tests/ -v`; nếu test lỗi thì dừng pipeline ngay.
+2. **`build` (`gcr.io/cloud-builders/docker`):** Pull image `:latest` để tận dụng Docker layer cache (`--cache-from`), build Docker image gắn tag `$COMMIT_SHA` và `latest`.
+3. **`push` (`gcr.io/cloud-builders/docker`):** Đẩy cả 2 tag image lên Container Registry (`gcr.io/$PROJECT_ID/ai-agent`).
+4. **`deploy` (`gcr.io/cloud-builders/gcloud`):** Deploy bản mới nhất lên Cloud Run (`asia-southeast1`, `min-instances=1` tránh cold start, `max-instances=10`, `512Mi` RAM, `1` CPU) và gắn secret từ Secret Manager (`--set-secrets`); `service.yaml` mô tả cấu hình tương đương theo chuẩn Knative kèm `livenessProbe` (`/health`), `startupProbe` (`/ready`) và `containerConcurrency: 80`.
 
 ---
 
@@ -414,3 +439,5 @@ ete
   🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
 ================================================================
 ```
+- **CP6 (Part 3 — Cloud Deployment):** Dùng AI hướng dẫn cấu hình Render Web Service + Key Value, tạo `DEPLOYMENT.md`, đã tự deploy lên Render và kiểm tra các endpoint public `/health`, `/ready`, `/ask`
+- **CP7 (Part 7 Bước 1 — Benchmark local):** Dùng AI hỗ trợ bổ sung 2 mục còn thiếu (`security-02`, `scaling-03`) vào KNOWLEDGE_BASE trong `develop/utils/mock_llm.py` (và đồng bộ sang `production/utils/mock_llm.py` khi đã đạt full test), điền mục 1–3 vào `BENCHMARK_REPORT.md` khớp hoàn toàn với 10 file JSON. Đã tự chạy toàn bộ `load_test.py` và `eval/run_eval.py` trên máy (`eval_v2_fixed.json` đạt `23/23`, 0 regression)

@@ -335,12 +335,11 @@ Kết quả chạy `python check_production_ready.py` trong Ubuntu WSL2 (`os.nam
 - **CP0:** Dùng AI hướng dẫn cài WSL2 trên máy Windows
 - **CP1 (Part 1):** Dùng AI để giải thích các kết quả chạy của `01-localhost-vs-production/develop` và `production`, tổng hợp câu trả lời vào mục Part 1 của `MISSION_ANSWERS.md`. Đã tự chạy server, gửi request test cả 2 phiên bản và đối chiếu lại nội dung code trên máy
 - **CP2 (Part 2 — Exercise 2.1–2.4):** Dùng AI giải thích 2 file dockerfile và nguyên nhân tại sao cần chia stage build(multi-stage build), tính % chênh lệch kích thước image từ kết quả đo thực tế (`1.67 GB` vs `240 MB`). Đã tự build image, khởi chạy stack Compose và test qua Nginx trên máy
-- **CP3 (Part 4 — Exercise 4.1–4.4):** Dùng AI hướng dẫn lệnh test và tổng hợp giải thích tại sao cần rate-limiter, authJWT và và cost guard. Đã tự chạy server, lấy JWT, test `401`/`200`/`429` và đối chiếu kết quả trên máy
+- **CP3 (Part 4 — Exercise 4.1–4.4):** Dùng AI hướng dẫn lệnh test và tổng hợp giải thích tại sao cần rate-limiter, authJWT và cost guard. Đã tự chạy server, lấy JWT, test `401`/`200`/`429` và đối chiếu kết quả trên máy
 - **CP4 (Part 5 — Exercise 5.1–5.5):** Dùng AI hướng dẫn lệnh test `SIGTERM`, khởi chạy stack 3 instance và tổng hợp giải thích vào Part 5 của `MISSION_ANSWERS.md`. Đã tự chạy server `develop` (Graceful shutdown), bật Docker Compose scale 3 agent + Redis + Nginx, chạy `test_stateless.py` và kiểm tra đủ 10 message qua cả 3 instance.
 - **CP5 (Part 6 — `06-lab-complete/`):** Dùng AI hỗ trợ viết code các phần `TODO` trong `06-lab-complete/app/`, `Dockerfile`, `render.yaml`. Đã tự kiểm tra toàn bộ code bằng `python check_production_ready.py`, đạt `PASS 12/12` (`42/42 checks passed`, image `63 MB`)
 ``` text
 python check_production_ready.py
-ete
   ⏳ Kiểm tra tĩnh: file, Dockerfile, compose, config, code...
   ⏳ Chuẩn bị Redis cho bài test stateless...
   ⏳ Khởi động agent: uvicorn app.main:app --workers 2 (Redis: container redis:7-alpine tạm thời)
@@ -440,4 +439,5 @@ ete
 ================================================================
 ```
 - **CP6 (Part 3 — Cloud Deployment):** Dùng AI hướng dẫn cấu hình Render Web Service + Key Value, tạo `DEPLOYMENT.md`, đã tự deploy lên Render và kiểm tra các endpoint public `/health`, `/ready`, `/ask`
-- **CP7 (Part 7 Bước 1 — Benchmark local):** Dùng AI hỗ trợ bổ sung 2 mục còn thiếu (`security-02`, `scaling-03`) vào KNOWLEDGE_BASE trong `develop/utils/mock_llm.py` (và đồng bộ sang `production/utils/mock_llm.py` khi đã đạt full test), điền mục 1–3 vào `BENCHMARK_REPORT.md` khớp hoàn toàn với 10 file JSON. Đã tự chạy toàn bộ `load_test.py` và `eval/run_eval.py` trên máy (`eval_v2_fixed.json` đạt `23/23`, 0 regression)
+- **CP7 (Part 7 Bước 1 — Benchmark local):** Dùng AI hỗ trợ bổ sung 2 mục còn thiếu (`security-02`, `scaling-03`) vào KNOWLEDGE_BASE trong `develop/utils/mock_llm.py` (và đồng bộ sang `production/utils/mock_llm.py` khi đã đạt full test). Đã tự chạy toàn bộ `load_test.py` và `eval/run_eval.py` trên máy (`eval_v2_fixed.json` đạt `23/23`, 0 regression)
+- **CP8 (Part 7 Bước 2 — Observability stack):** Dùng AI hỗ trợ giải thích phân tích log `trace_id` chậm nhất (`01e4fca4441ae5f6f2af5629b8b2e8a0`), kiểm tra số liệu CSV (`scale_1_stats.csv`, `scale_3_stats.csv`. Đã tự chạy Locust headless (1 vs 3 instances), kiểm tra Nginx chặn `/metrics` (404), mở Grafana, tìm trace chậm/lỗi trên Jaeger và thực hiện đủ 5 thí nghiệm phá hệ thống A–E với 4 alert cùng firing trên Prometheus
